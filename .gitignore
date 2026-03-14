@@ -7,3 +7,5 @@ allure-results/
 .env
 .DS_Store
 compass_artifact_*.md
+.claude/
+.engineering/
