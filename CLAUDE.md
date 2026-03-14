@@ -84,7 +84,7 @@ npx allure generate reports/allure-results --clean && npx allure open
 npm run lint
 
 # Type check
-npx tsc --noEmit
+npm run typecheck
 
 # Run security tests only
 npx playwright test tests/security/
@@ -105,17 +105,14 @@ GitHub Actions workflow should:
 
 ## Key Playwright Patterns
 
-- Use `test.use({ storageState: '.auth/user.json' })` at the file level for authenticated tests
-- Global setup (`globalSetup` in `playwright.config.ts`) handles initial authentication
-- Fixtures in `fixtures/` extend `test` and `expect` — import from `fixtures/` not `@playwright/test` directly
+- Auth storage state is `.auth/standard-user.json` (set in `playwright.config.ts` `use.storageState`)
+- Global setup (`globalSetup` in `playwright.config.ts`) handles initial authentication — runs once before all tests
+- Fixtures in `fixtures/` extend `test` and `expect` — import from `@fixtures`, not `@playwright/test` directly
 - API tests use `request` fixture, not `page` — avoids spinning up a browser unnecessarily
-- `data-testid` attributes preferred for selectors over CSS classes or XPath
+- SauceDemo uses `data-test` attributes (not `data-testid`); CSS class selectors used only where `data-test` is absent
+- After sequential clicks that mutate the DOM (e.g. Add to Cart), always await a DOM assertion before the next interaction — WebKit requires this; Chromium/Firefox are more forgiving
 
-## Active Technologies
-- TypeScript 5.x, `strict: true`, `noImplicitAny: true` + `@playwright/test` (request fixture), `allure-playwright`, (005-product-catalog-api)
-- N/A — stateless HTTP tests; no persistence layer (005-product-catalog-api)
-- TypeScript 5.x, `strict: true`, `noImplicitAny: true` + `@playwright/test`, `allure-playwright`, (001-saucedemo-auth)
-- `.auth/standard-user.json` — Playwright storage state (gitignored) (001-saucedemo-auth)
+## Current Test Suite
 
-## Recent Changes
-- 005-product-catalog-api: Added TypeScript 5.x, `strict: true`, `noImplicitAny: true` + `@playwright/test` (request fixture), `allure-playwright`,
+- 116 tests: E2E (login, session, inventory, cart, checkout) across Chromium/Firefox/WebKit + API (auth, products, categories) headless
+- All 116 pass on `main`; baseline to maintain before merging new work

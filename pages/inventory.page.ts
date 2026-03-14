@@ -183,7 +183,11 @@ export class InventoryPage {
    * Use `addProductToCartByName` when a specific product is required.
    */
   public async addProductToCartByIndex(index: number): Promise<void> {
+    const beforeCount = await this.page.locator(this.addToCartButtonSelector).count();
     await this.page.locator(this.addToCartButtonSelector).nth(index).click();
+    // Wait for the clicked button to transition to "Remove", confirming the
+    // cart state update is committed before any subsequent interaction.
+    await expect(this.page.locator(this.addToCartButtonSelector)).toHaveCount(beforeCount - 1);
   }
 
   /**
