@@ -1,3 +1,0 @@
-Project 1: Enterprise-grade Playwright Framework
-
-Use Test Driven Development (TDD), Spec Driven Development (SDD), Shift-left DevSecOps, and Shift-left Quality Assurance.

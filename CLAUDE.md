@@ -16,6 +16,7 @@ Enterprise-grade Playwright/TypeScript test automation framework targeting open-
 ## Planned Architecture
 
 ### Core Framework Components
+
 - **Page Object Model (POM)**: All page interactions abstracted into page classes under `pages/`
 - **TypeScript throughout**: Strict typing for all test helpers, fixtures, and utilities
 - **Playwright Test runner**: Native `@playwright/test` (not Playwright + Jest/Mocha)
@@ -23,8 +24,9 @@ Enterprise-grade Playwright/TypeScript test automation framework targeting open-
 - **Authentication state management**: Saved storage states in `.auth/` to avoid repeated login in tests
 - **Parallel execution**: Tests designed to be independent and runnable with `--workers`
 
-### Directory Structure (planned)
-```
+### Directory Structure
+
+```plaintext
 pages/          # Page Object classes
 tests/
   e2e/          # End-to-end UI tests
@@ -40,6 +42,7 @@ reports/        # Allure report output (gitignored)
 ```
 
 ### Security Testing Integration
+
 - **OWASP ZAP integration**: Playwright navigates flows while ZAP performs passive/active scanning
 - **OWASP Top 10 coverage**: Authentication flaws, XSS, input sanitization, CSRF, JWT validation
 - **Security gates in CI**: Pipeline fails on critical/high severity ZAP findings
@@ -93,6 +96,7 @@ npx playwright test tests/api/
 ## CI/CD Pipeline
 
 GitHub Actions workflow should:
+
 1. Run lint and type-check on every PR
 2. Run full test suite on push to `main`
 3. Run security tests with OWASP ZAP and fail on critical findings
@@ -106,3 +110,12 @@ GitHub Actions workflow should:
 - Fixtures in `fixtures/` extend `test` and `expect` — import from `fixtures/` not `@playwright/test` directly
 - API tests use `request` fixture, not `page` — avoids spinning up a browser unnecessarily
 - `data-testid` attributes preferred for selectors over CSS classes or XPath
+
+## Active Technologies
+- TypeScript 5.x, `strict: true`, `noImplicitAny: true` + `@playwright/test` (request fixture), `allure-playwright`, (005-product-catalog-api)
+- N/A — stateless HTTP tests; no persistence layer (005-product-catalog-api)
+- TypeScript 5.x, `strict: true`, `noImplicitAny: true` + `@playwright/test`, `allure-playwright`, (001-saucedemo-auth)
+- `.auth/standard-user.json` — Playwright storage state (gitignored) (001-saucedemo-auth)
+
+## Recent Changes
+- 005-product-catalog-api: Added TypeScript 5.x, `strict: true`, `noImplicitAny: true` + `@playwright/test` (request fixture), `allure-playwright`,

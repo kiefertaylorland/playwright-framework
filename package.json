@@ -1,0 +1,29 @@
+{
+  "name": "playwright-framework",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Playwright TypeScript automation framework",
+  "scripts": {
+    "test": "playwright test",
+    "test:auth": "playwright test tests/e2e/login.spec.ts tests/e2e/session.spec.ts",
+    "test:auth:artifacts": "PW_RECORD_ARTIFACTS=1 playwright test tests/e2e/login.spec.ts tests/e2e/session.spec.ts --project=chromium",
+    "test:api": "playwright test tests/api/ --workers=4",
+    "test:api:artifacts": "PW_RECORD_ARTIFACTS=1 playwright test tests/api/ --project=chromium --workers=4",
+    "trace:list": "find test-results -name trace.zip | sort",
+    "trace:open:latest": "playwright show-trace \"$(find test-results -name trace.zip -print0 | xargs -0 ls -t | head -n 1)\"",
+    "video:open:latest": "open \"$(find test-results -name '*.webm' | head -n 1)\"",
+    "report:open": "playwright show-report",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.0",
+    "@types/node": "^22.15.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "allure-playwright": "^3.2.0",
+    "dotenv": "^16.5.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.8.3"
+  }
+}
