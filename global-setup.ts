@@ -11,6 +11,13 @@ import { ROUTES } from './utils/routes';
 
 async function globalSetup(): Promise<void> {
   const credentials = getSauceCredentials();
+
+  if (!credentials?.username || !credentials?.password) {
+    throw new Error(
+      'Invalid credentials: Missing SAUCE_USERNAME/SAUCE_PASSWORD. Configure repository secrets or provide env vars.'
+    );
+  }
+
   const authDirectory = path.resolve(process.cwd(), '.auth');
   const storageStatePath = path.join(authDirectory, 'standard-user.json');
 

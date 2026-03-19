@@ -38,6 +38,9 @@ export class LoginPage {
   }
 
   public async login(username: string, password: string): Promise<void> {
+    if (!username || !password) {
+      throw new Error('Username and password are required for login');
+    }
     await this.fillUsername(username);
     await this.fillPassword(password);
     await this.submit();

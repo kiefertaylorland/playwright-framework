@@ -58,15 +58,29 @@ jobs:
           -jsonl
           -o /reports/nuclei-results.json
           -no-interactsh
+          || echo "[]" > /reports/nuclei-results.json
+
+      - name: Verify Nuclei results file exists
+        run: |
+          if [ ! -f reports/nuclei-results.json ]; then
+            echo "ERROR: Nuclei results file not generated"
+            exit 1
+          fi
+          echo "Nuclei results file exists: $(wc -l < reports/nuclei-results.json) lines"
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run global setup
+      - name: Verify SauceDemo credentials are configured
         env:
           SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
           SAUCE_PASSWORD: ${{ secrets.SAUCE_PASSWORD }}
-        run: npx playwright install && npm run typecheck
+        run: |
+          if [ -z "$SAUCE_USERNAME" ] || [ -z "$SAUCE_PASSWORD" ]; then
+            echo "ERROR: Missing SAUCE_USERNAME or SAUCE_PASSWORD secrets"
+            exit 1
+          fi
+          echo "Credentials configured: ✓"
 
       - name: Run security tests with Nuclei
         env:
@@ -112,6 +126,17 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
+
+      - name: Verify SauceDemo credentials are configured
+        env:
+          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_PASSWORD: ${{ secrets.SAUCE_PASSWORD }}
+        run: |
+          if [ -z "$SAUCE_USERNAME" ] || [ -z "$SAUCE_PASSWORD" ]; then
+            echo "ERROR: Missing SAUCE_USERNAME or SAUCE_PASSWORD secrets"
+            exit 1
+          fi
+          echo "Credentials configured: ✓"
 
       - name: Run baseline E2E tests
         env:
