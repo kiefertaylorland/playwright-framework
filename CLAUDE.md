@@ -43,14 +43,15 @@ reports/        # Allure report output (gitignored)
 
 ### Security Testing Integration ✅ IMPLEMENTED
 
-- **OWASP ZAP integration**: Playwright navigates flows while ZAP performs passive scanning via Docker proxy (port 8080)
+- **Nuclei vulnerability scanning**: Docker-based scanning with 735+ OWASP Top 10 templates, direct URL scanning (one-shot, no proxy)
 - **OWASP Top 10 coverage**: A01 (Access Control), A02 (Cryptographic Failures), A03 (Injection - XSS/SQLi), A05 (Security Misconfiguration), A07 (Auth Failures)
   - 22 security tests across 6 test files
   - XSS/SQLi payload definitions in `utils/security-payloads.ts`
-  - ZAP REST API integration via `utils/zap-helper.ts`
-  - Tests skip gracefully when ZAP unavailable (`ZAP_PROXY_SKIP=1`)
-- **Security gates in CI**: `.github/workflows/security.yml` fails on Critical/High severity ZAP findings
-- **Local testing**: Run without Docker via `ZAP_PROXY_SKIP=1 npm run test:security`
+  - Nuclei JSONL result parsing via `utils/nuclei-helper.ts`
+  - Tests skip gracefully when Nuclei results unavailable (`NUCLEI_SKIP=1`)
+- **Security gates in CI**: `.github/workflows/security.yml` fails on Critical/High severity Nuclei findings
+- **Baseline testing**: Run without Docker via `npm run test:security` (19 baseline tests, 3 Nuclei tests skip)
+- **Full suite**: `npm run nuclei:scan && npm run test:security:with-nuclei` (all 22 tests, with vulnerability scanning)
 
 ## Common Commands
 
@@ -104,9 +105,10 @@ GitHub Actions workflow should:
 
 1. Run lint and type-check on every PR
 2. Run full test suite on push to `main`
-3. Run security tests with OWASP ZAP and fail on critical findings
-4. Publish Allure reports as workflow artifacts
-5. Include Docker-based runs for environment parity
+3. Run Nuclei vulnerability scanning (Docker) and fail on Critical/High findings
+4. Run security tests (22 tests: 19 baseline + 3 Nuclei validation)
+5. Publish Allure reports as workflow artifacts
+6. Include Docker-based runs for environment parity
 
 ## Key Playwright Patterns
 
@@ -127,14 +129,18 @@ GitHub Actions workflow should:
 ## Active Technologies
 - **TypeScript 5.x** — Strict mode, `noImplicitAny` enabled
 - **Playwright 1.40+** — Browser automation + request fixture
-- **OWASP ZAP** — Docker-based passive scanning, REST API integration
+- **Nuclei** — Docker-based vulnerability scanning with 735+ templates, JSONL results
 - **Node.js 18+** — Test runtime environment
 - **GitHub Actions** — CI/CD pipeline with Docker support
 
-## Recent Changes (006-owasp-security-tests)
-- ✅ Implemented OWASP Security Test Suite: 22 security tests covering A01-A07
-- ✅ Integrated OWASP ZAP Docker proxy for passive vulnerability scanning
-- ✅ Created security test files: access-control, crypto-failures, injection, headers, auth-security, zap-passive-scan
-- ✅ Added GitHub Actions workflow: `.github/workflows/security.yml` with ZAP integration and CI failure gates
-- ✅ Created utilities: `utils/security-payloads.ts`, `utils/zap-helper.ts`
-- ✅ Updated README.md and CLAUDE.md with security testing documentation
+## Recent Changes (ZAP → Nuclei Migration)
+- ✅ Migrated from OWASP ZAP (proxy-based) to Nuclei (direct URL scanning)
+- ✅ Created Nuclei utilities: `utils/nuclei-helper.ts` (JSONL parsing, result filtering)
+- ✅ Created Nuclei test file: `tests/security/nuclei-scan.spec.ts` (3 tests: file exists, valid JSONL, no Critical/High)
+- ✅ Created Nuclei Docker config: `docker/docker-compose.nuclei.yml` (735+ templates, no interactsh)
+- ✅ Updated npm scripts: `nuclei:scan`, `nuclei:scan:local`, `test:security:with-nuclei`
+- ✅ Updated GitHub Actions workflow: `.github/workflows/security.yml` (Nuclei step instead of ZAP service)
+- ✅ Created documentation: `docs/NUCLEI_SETUP.md` (setup, troubleshooting, usage)
+- ✅ Cleaned up ZAP files: Deleted `utils/zap-helper.ts`, `tests/security/zap-passive-scan.spec.ts`, `docker/docker-compose.zap.yml`, `docs/ZAP_SETUP.md`
+- ✅ Updated specifications: `specs/006-owasp-security-tests/quickstart.md` (Nuclei references)
+- ✅ Updated README.md: Already reflects Nuclei, no ZAP mentions

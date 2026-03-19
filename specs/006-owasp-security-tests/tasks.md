@@ -1,9 +1,10 @@
-# Task List: OWASP Security Test Suite with ZAP Integration
+# Task List: OWASP Security Test Suite with Nuclei Integration
 
-**Feature Branch**: `006-owasp-security-tests`
-**Created**: 2026-03-18
-**Status**: Pending (ready for TDD implementation)
-**Total Tasks**: 52
+**Feature Branch**: `006-owasp-security-tests` (ZAP → Nuclei migration completed 2026-03-19)
+**Created**: 2026-03-18 | **Updated**: 2026-03-19
+**Status**: ✅ Completed (Implementation done with Nuclei instead of ZAP)
+**Note**: This is a historical task list from the original ZAP planning phase. The feature is now implemented with Nuclei (direct URL scanning with 735+ templates).
+**Total Original Tasks**: 52
 
 ---
 

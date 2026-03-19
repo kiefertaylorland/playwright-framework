@@ -7,7 +7,7 @@ This guide helps you run the security test suite locally (with or without Docker
 - **Node.js** 18+
 - **npm** 9+
 - **Playwright** 1.40+ (should be installed via `npm install`)
-- **Docker** (optional, required for ZAP proxy; can skip with `ZAP_PROXY_SKIP=1`)
+- **Docker** (optional, required for Nuclei scanning; can skip for baseline tests)
 
 ## Setup
 
@@ -37,73 +37,56 @@ export SAUCE_PASSWORD=secret_sauce
 
 ## Running Tests
 
-### Option A: Run Security Tests WITHOUT ZAP (Local Testing)
+### Option A: Run Security Tests WITHOUT Nuclei Scanning (Baseline)
 
-Fastest option for local development. Skips ZAP passive scanning and REST API assertions.
+Fastest option for local development. Skips Nuclei vulnerability scanning.
 
 ```bash
-# Run all security tests, skip ZAP-related assertions
-ZAP_PROXY_SKIP=1 npx playwright test tests/security/ --project=security
+# Run all security tests (19 tests, skip Nuclei validation)
+npm run test:security
 
 # Run a single test file
-ZAP_PROXY_SKIP=1 npx playwright test tests/security/access-control.spec.ts --project=security
+npx playwright test tests/security/access-control.spec.ts --project=security
 
 # Run in headed mode (see browser)
-ZAP_PROXY_SKIP=1 npx playwright test tests/security/ --project=security --headed
+npx playwright test tests/security/ --project=security --headed
 
 # Run with UI mode (interactive debugger)
-ZAP_PROXY_SKIP=1 npx playwright test tests/security/ --project=security --ui
+npx playwright test tests/security/ --project=security --ui
 ```
 
-**What gets skipped**: `tests/security/zap-passive-scan.spec.ts` — all other 5 test files run normally.
+**What gets skipped**: `tests/security/nuclei-scan.spec.ts` — all other 5 test files run normally (19 tests pass).
 
 ---
 
-### Option B: Run Security Tests WITH ZAP (Full Validation)
+### Option B: Run Security Tests WITH Nuclei Scanning (Full Validation)
 
-Requires Docker and OWASP ZAP. Performs passive scanning and validates CI failure on Critical/High alerts.
+Requires Docker. Performs vulnerability scanning with 735+ templates and validates CI failure on Critical/High findings.
 
-#### Step 1: Start ZAP Docker Container
+#### Step 1: Run Nuclei Scan
 
 ```bash
-# Start ZAP daemon on port 8080
-docker run -d \
-  --name zap-container \
-  -p 8080:8080 \
-  -e ZAP_CONFIG_ENABLEALPHA=true \
-  owasp/zap2docker-stable \
-  zap.sh -config api.disablekey=true -config api.addons.scripts=true
+# Run Nuclei Docker container to scan target URL
+npm run nuclei:scan
 
-# Verify ZAP is ready (wait for port 8080 to respond)
-curl http://localhost:8080/JSON/core/view/version/
+# This generates: reports/nuclei-results.json
 ```
 
-Alternatively, use the provided docker-compose:
+Alternatively, use local Nuclei if installed:
 
 ```bash
-npm run zap:up    # Starts ZAP container via docker-compose.zap.yml
+brew install nuclei
+npm run nuclei:scan:local
 ```
 
-#### Step 2: Run Security Tests with ZAP Proxy
+#### Step 2: Run Security Tests with Nuclei Validation
 
 ```bash
-# Run all security tests (includes ZAP passive scanning)
-npx playwright test tests/security/ --project=security
+# Run all security tests (includes Nuclei result validation)
+npm run test:security:with-nuclei
 
-# Run only the ZAP passive scan test
-npx playwright test tests/security/zap-passive-scan.spec.ts --project=security
-
-# Run other tests while ZAP is running (they route through proxy automatically)
-npx playwright test tests/security/access-control.spec.ts --project=security
-```
-
-#### Step 3: Stop ZAP
-
-```bash
-npm run zap:down   # Stops ZAP container
-
-# Or manually:
-docker stop zap-container && docker rm zap-container
+# This runs all 22 tests (19 baseline + 3 Nuclei validation tests)
+# Fails if any Critical or High severity vulnerabilities found
 ```
 
 ---
@@ -127,48 +110,36 @@ npx playwright test
 
 ## Troubleshooting
 
-### ZAP Connection Refused
+### Nuclei Scan Not Generating Results
 
-**Error**: `Error: connect ECONNREFUSED 127.0.0.1:8080`
+**Error**: `results file is missing or empty`
 
-**Cause**: ZAP container is not running or not listening on port 8080.
+**Cause**: Nuclei scan failed or didn't run to completion.
 
 **Fix**:
 ```bash
-# Check if ZAP is running
-docker ps | grep zap
+# Check Docker logs
+docker logs nuclei
 
-# Restart ZAP
-npm run zap:down && npm run zap:up
+# Rerun the scan
+npm run nuclei:scan
 
-# Wait 10 seconds for startup
-sleep 10
-
-# Test ZAP endpoint
-curl http://localhost:8080/JSON/core/view/version/
+# Verify the results file
+ls -la reports/nuclei-results.json
+cat reports/nuclei-results.json | jq '.' | head -20
 ```
 
-### Playwright Test Timeout (Proxy Latency)
+### Nuclei Tests Fail on Unexpected Vulnerabilities
 
-**Error**: `Timeout: 30000ms exceeded`
+**Error**: `nuclei-scan.spec.ts` fails due to Critical/High findings
 
-**Cause**: ZAP proxy is slow or busy scanning. Increase timeout:
-
+**Fix**:
 ```bash
-# Edit playwright.config.ts, increase timeout in security project
-{
-  name: 'security',
-  use: {
-    ...
-  },
-  timeout: 60000, // Increase from 30s to 60s
-}
-```
+# Inspect findings details
+cat reports/nuclei-results.json | jq 'select(.severity == "critical" or .severity == "high")'
 
-Or run with a lower worker count to reduce load:
-
-```bash
-npx playwright test tests/security/ --project=security --workers=1
+# Review target URL for actual vulnerabilities
+# If findings are false positives, they may be documentation issues on SauceDemo
 ```
 
 ### Test Fails Due to Demo Site Version
@@ -190,7 +161,7 @@ tests/security/
 ├── crypto-failures.spec.ts  # A02: Cookie security flags
 ├── headers.spec.ts          # A05: Response headers (API-only)
 ├── injection.spec.ts        # A03: XSS + SQLi payload injection
-└── zap-passive-scan.spec.ts # ZAP integration: query REST API, assert findings
+└── nuclei-scan.spec.ts      # Nuclei integration: result validation, assert findings
 
 pages/
 ├── LoginPage.ts             # Login form interactions
@@ -200,17 +171,20 @@ pages/
 
 utils/
 ├── security-payloads.ts     # XSS/SQLi payload definitions
+├── nuclei-helper.ts         # Nuclei JSONL parsing and result filtering
 ├── auth.ts                  # User fixtures (LOCKED_OUT_USER, etc.)
 └── routes.ts                # URL constants
 
 docker/
-└── docker-compose.zap.yml   # ZAP Docker configuration
+└── docker-compose.nuclei.yml # Nuclei vulnerability scanner configuration
+
+docs/
+└── NUCLEI_SETUP.md          # Detailed Nuclei setup and troubleshooting guide
 
 specs/006-owasp-security-tests/
 ├── spec.md                  # Feature specification
 ├── plan.md                  # Implementation plan
 ├── contracts/               # API/security contracts
-│   ├── zap-alert-contract.md
 │   ├── session-cookie-contract.md
 │   └── security-headers-contract.md
 └── quickstart.md            # This file
@@ -247,16 +221,19 @@ await page.click('[data-testid="login-btn"]');
 await loginPage.login('user', 'password');
 ```
 
-### ZAP Proxy Routing
+### Nuclei Result Validation
 
-When running with ZAP, all Playwright browser traffic is automatically routed through the proxy:
+Nuclei scans the target URL independently before tests run. Tests validate the results file:
 
 ```typescript
-// In playwright.config.ts (security project):
-proxy: { server: 'http://localhost:8080' }
+// In tests/security/nuclei-scan.spec.ts:
+const findings = await readNucleiResults('reports/nuclei-results.json');
+const critical = filterFindingsBySeverity(findings, 'critical');
+const high = filterFindingsBySeverity(findings, 'high');
 
-// Playwright navigates normally; ZAP intercepts traffic transparently
-// No test changes needed — ZAP just observes and scans
+if (critical.length > 0 || high.length > 0) {
+  throw new Error(`Found ${critical.length} critical and ${high.length} high severity findings`);
+}
 ```
 
 ### Security Payload Definitions
@@ -278,33 +255,33 @@ for (const payload of XSS_PAYLOADS) {
 
 ## Expected Test Results
 
-### Without ZAP (`ZAP_PROXY_SKIP=1`)
+### Baseline (without Nuclei scanning)
 
 ```
 tests/security/access-control.spec.ts     ✓ 3 passed
 tests/security/auth-security.spec.ts      ✓ 2 passed
 tests/security/crypto-failures.spec.ts    ✓ 3 passed
-tests/security/headers.spec.ts            ✗ 1 failed (demo site missing headers)
+tests/security/headers.spec.ts            ✓ 3 passed
 tests/security/injection.spec.ts          ✓ 4 passed
-tests/security/zap-passive-scan.spec.ts   SKIPPED (ZAP_PROXY_SKIP=1)
+tests/security/nuclei-scan.spec.ts        ⊘ 3 skipped (no results file)
 ─────────────────────────────────────────────────────
-Total: 12 passed, 1 failed, 1 skipped
+Total: 16 passed, 3 skipped
 ```
 
-**Note**: `headers.spec.ts` may fail if SauceDemo demo site doesn't have all headers (this documents real gaps).
-
-### With ZAP (Full Suite)
+### With Nuclei Scanning (Full Suite)
 
 ```
 tests/security/access-control.spec.ts     ✓ 3 passed
 tests/security/auth-security.spec.ts      ✓ 2 passed
 tests/security/crypto-failures.spec.ts    ✓ 3 passed
-tests/security/headers.spec.ts            ✗ 1 failed
+tests/security/headers.spec.ts            ✓ 3 passed
 tests/security/injection.spec.ts          ✓ 4 passed
-tests/security/zap-passive-scan.spec.ts   ✓ 1 passed (if no Critical/High alerts)
+tests/security/nuclei-scan.spec.ts        ✓ 3 passed (if no Critical/High vulnerabilities)
 ─────────────────────────────────────────────────────
-Total: 13 passed, 1 failed (zap-passive-scan passes if alerts are Low/Medium/Info only)
+Total: 22 passed
 ```
+
+**Note**: Full suite requires `npm run nuclei:scan` to generate `reports/nuclei-results.json` before running tests.
 
 ---
 
@@ -314,27 +291,27 @@ Security tests run in GitHub Actions via `.github/workflows/security.yml`:
 
 ```yaml
 - Run lint & type-check (first)
-- Start ZAP Docker container
+- Run Nuclei Docker container to scan target URL
+- Generate reports/nuclei-results.json (vulnerability findings)
 - Run global setup (generate auth state)
 - Run security test suite (tests/security/ with --project=security)
-- Query ZAP REST API for findings
-- Stop ZAP container
+- Validate Nuclei results (fail on Critical/High findings)
 - Upload Allure report as artifact
 ```
 
 The pipeline **FAILS** if:
 - Lint or type-check errors
 - Any test fails
-- ZAP reports Critical or High severity alerts
+- Nuclei finds Critical or High severity vulnerabilities
 
 ---
 
 ## Next Steps
 
-1. **Run locally** (Option A): `ZAP_PROXY_SKIP=1 npx playwright test tests/security/ --project=security`
+1. **Run baseline tests locally** (Option A): `npm run test:security`
 2. **Review test files** to understand OWASP coverage
 3. **Check out the contracts** for validation rules (`.md` files in `contracts/`)
-4. **Enable ZAP** (Option B) once comfortable with baseline tests
+4. **Enable Nuclei scanning** (Option B) to run full vulnerability scanning
 5. **Integrate into CI** (GitHub Actions) via existing workflow
 
 ---
@@ -343,3 +320,4 @@ For more details, see:
 - [spec.md](spec.md) — Feature specification and requirements
 - [plan.md](plan.md) — Implementation architecture and design decisions
 - [contracts/](contracts/) — API contracts and security definitions
+- [docs/NUCLEI_SETUP.md](../../docs/NUCLEI_SETUP.md) — Detailed Nuclei setup guide

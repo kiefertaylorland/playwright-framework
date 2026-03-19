@@ -1,7 +1,7 @@
-# Specification Quality Checklist: OWASP Security Test Suite with ZAP Integration
+# Specification Quality Checklist: OWASP Security Test Suite with Nuclei Integration
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-03-18
+**Created**: 2026-03-18 | **Updated**: 2026-03-19 (ZAP → Nuclei migration)
 **Feature**: [Link to spec.md](../spec.md)
 
 ## Content Quality
@@ -37,10 +37,12 @@
 
 The OWASP Security Test Suite specification includes:
 - **8 user stories** (4 P1 critical, 3 P2 supporting, 1 P2 automation)
-- **14 functional requirements** (FR-001 through FR-014) covering all OWASP categories and ZAP integration
-- **5 key entities** (Security Test Suite, ZAP Proxy, ZAP Alert, Security Payload, Session Cookie)
+- **14 functional requirements** (FR-001 through FR-014) covering all OWASP categories and vulnerability scanning integration
+- **5 key entities** (Security Test Suite, Vulnerability Scanner, Security Finding, Security Payload, Session Cookie)
 - **8 measurable success criteria** (SC-001 through SC-008) with specific, verifiable outcomes
-- **5 edge cases** addressing ZAP unavailability, payload encoding, session expiry, lockout timing, and API errors
-- **6 assumptions** documenting ZAP availability, demo site maturity, payload safety, browser selection, scanning scope, and CI environment
+- **5 edge cases** addressing scanning tool unavailability, payload encoding, session expiry, lockout timing, and API errors
+- **6 assumptions** documenting scanner availability, demo site maturity, payload safety, browser selection, scanning scope, and CI environment
 
 Specification is technology-agnostic, focuses on user value (QA engineers validating security controls), and provides clear acceptance scenarios for all test categories.
+
+**Note**: Originally specified with OWASP ZAP; now implemented with Nuclei (direct URL scanning with 735+ templates).
