@@ -10,7 +10,7 @@ Enterprise-grade Playwright/TypeScript test automation framework targeting open-
 | `tests/api/` | Practice Software Testing API | Auth, product catalog, categories |
 | `tests/security/` | SauceDemo | A01 Access Control, A02 Cookies, A03 Injection (XSS/SQLi), A05 Headers, A07 Auth |
 
-**116 E2E tests** · **22 Security tests** · Chromium · Firefox · WebKit · OWASP ZAP integration
+**116 E2E tests** · **22 Security tests** · Chromium · Firefox · WebKit · Nuclei vulnerability scanning
 
 ## Stack
 
@@ -19,7 +19,7 @@ Enterprise-grade Playwright/TypeScript test automation framework targeting open-
 - **Page Object Model** — all selectors and interactions encapsulated in `pages/`
 - **Custom fixtures** — page objects injected via `fixtures/index.ts`, imported instead of `@playwright/test`
 - **Global setup** — single pre-run login that saves browser storage state to `.auth/standard-user.json`, reused by all E2E tests to avoid repeated authentication
-- **[OWASP ZAP](https://www.zaproxy.org/)** — Docker-based passive vulnerability scanning, REST API integration for alert validation
+- **[Nuclei](https://github.com/projectdiscovery/nuclei)** — Docker-based vulnerability scanning with 735+ OWASP Top 10 templates, JSONL results validation
 - **Allure** — rich HTML report with step-level detail
 
 ## Project structure
@@ -35,20 +35,20 @@ tests/
     ├── injection.spec.ts           # A03 Injection (XSS + SQLi payloads)
     ├── headers.spec.ts             # A05 Security Misconfiguration (response headers)
     ├── auth-security.spec.ts       # A07 Auth Failures (lockout + session invalidation)
-    └── zap-passive-scan.spec.ts    # ZAP integration (passive scanning + alert validation)
+    └── nuclei-scan.spec.ts         # Nuclei integration (vulnerability scanning + result validation)
 fixtures/       # Extended test/expect exported for all tests
 utils/
   ├── auth.ts                       # Auth helpers, fixtures
   ├── routes.ts                     # Route constants
   ├── security-payloads.ts          # XSS/SQLi payload definitions
-  └── zap-helper.ts                 # ZAP REST API helpers
+  └── nuclei-helper.ts              # Nuclei result parsing and validation
 docker/         # Infrastructure-as-code
-  └── docker-compose.zap.yml        # OWASP ZAP container definition
+  └── docker-compose.nuclei.yml     # Nuclei vulnerability scanner container
 .auth/          # Saved storage state (gitignored, created at runtime)
 .github/
   └── workflows/
       ├── test.yml                  # E2E + API tests
-      └── security.yml              # Security tests with ZAP
+      └── security.yml              # Security tests with Nuclei scanning
 reports/        # Allure report output (gitignored)
 test-results/   # Playwright artifacts: traces, screenshots, videos
 ```
@@ -88,13 +88,12 @@ npx playwright test tests/e2e/
 # API tests only (4 parallel workers, no browser)
 npm run test:api
 
-# Security tests only (without ZAP)
-ZAP_PROXY_SKIP=1 npm run test:security
+# Security tests only (baseline, without Nuclei scanning)
+npm run test:security
 
-# Security tests with ZAP passive scanning
-npm run zap:up                    # Start ZAP Docker container (wait 10s)
-npx playwright test --project=security
-npm run zap:down                  # Stop ZAP
+# Security tests with Nuclei vulnerability scanning
+npm run nuclei:scan               # Run Nuclei Docker scan → reports/nuclei-results.json
+npm run test:security:with-nuclei # Run full suite with Nuclei results validation
 
 # Specific file
 npx playwright test tests/security/injection.spec.ts
@@ -117,7 +116,7 @@ npm run test:auth:artifacts
 
 ## Security Testing
 
-The security test suite covers **OWASP Top 10** vulnerabilities testable via Playwright and integrates **OWASP ZAP** for passive vulnerability scanning.
+The security test suite covers **OWASP Top 10** vulnerabilities testable via Playwright and integrates **Nuclei** for automated vulnerability scanning with 735+ templates.
 
 ### Implemented Coverage
 
@@ -130,42 +129,48 @@ The security test suite covers **OWASP Top 10** vulnerabilities testable via Pla
 | **A05** Security Misconfiguration | `headers.spec.ts` | API | Response headers validation (X-Content-Type-Options, X-Frame-Options, CSP) |
 | **A07** Auth Failures (Lockout) | `auth-security.spec.ts` | UI | Brute-force lockout enforcement |
 | **A07** Auth Failures (Session) | `auth-security.spec.ts` | UI | Session invalidation on logout |
-| **ZAP Integration** | `zap-passive-scan.spec.ts` | UI+API | Passive scanning, alert validation, CI failure on Critical/High |
+| **Nuclei Integration** | `nuclei-scan.spec.ts` | Automated | Vulnerability scanning, result validation, CI failure on Critical/High |
 
 ### Running Security Tests
 
-**Without ZAP** (fast local development):
+**Baseline** (fast local development, without Nuclei scanning):
 ```bash
 export SAUCE_USERNAME=standard_user
 export SAUCE_PASSWORD=secret_sauce
-ZAP_PROXY_SKIP=1 npx playwright test tests/security/ --project=security
-# Result: 19 tests pass, 3 ZAP tests skipped
+npm run test:security
+# Result: 19 tests pass, 3 Nuclei tests skipped
 ```
 
-**With ZAP Docker proxy** (full vulnerability scanning):
+**Full suite** (with Nuclei vulnerability scanning):
 ```bash
-npm run zap:up                    # Start OWASP ZAP container
-npx playwright test --project=security
-npm run zap:down                  # Stop ZAP
+npm run nuclei:scan               # Run Nuclei Docker scan → reports/nuclei-results.json
+npm run test:security:with-nuclei # Run all 22 tests (includes Nuclei result validation)
 # Fails on any Critical/High severity findings
+```
+
+**Local Nuclei** (if `brew install nuclei` is available):
+```bash
+npm run nuclei:scan:local         # Direct Nuclei CLI (faster than Docker)
+npm run test:security:with-nuclei # Validate results
 ```
 
 ### Architecture
 
-- **Security project** in `playwright.config.ts` routes all Chromium traffic through ZAP proxy (port 8080)
-- **Payload definitions** in `utils/security-payloads.ts` — reusable XSS/SQLi injection strings
-- **ZAP helper** in `utils/zap-helper.ts` — REST API response parsing
+- **Nuclei scanning** — Docker container scans target URL with 735+ vulnerability templates before tests run
+- **JSONL results** — Nuclei outputs results to `reports/nuclei-results.json` (one JSON object per line)
+- **Result validation** in `tests/security/nuclei-scan.spec.ts` — parses JSONL, filters by severity, fails on Critical/High
+- **Payload definitions** in `utils/security-payloads.ts` — reusable XSS/SQLi injection strings for UI tests
+- **Nuclei helper** in `utils/nuclei-helper.ts` — JSONL parsing and result filtering utilities
 - **Page Object reuse** — all tests use existing page objects (LoginPage, InventoryPage, etc.)
-- **CI integration** — `.github/workflows/security.yml` runs security tests on every PR and main push
+- **CI integration** — `.github/workflows/security.yml` runs Nuclei scan, then security tests on every PR and main push
 
 ### Expectations
 
-- **Local testing** (`ZAP_PROXY_SKIP=1`): 19/22 tests pass (ZAP tests skip gracefully)
-- **With ZAP**: All tests run; CI fails if ZAP finds Critical/High alerts
-- **Expected failures**: `headers.spec.ts` may fail on SauceDemo demo site (intentional documentation of gaps)
+- **Baseline** (`npm run test:security`): 19/22 tests pass (Nuclei tests skip gracefully)
+- **With Nuclei** (`npm run nuclei:scan && npm run test:security:with-nuclei`): All 22 tests run; CI fails if Nuclei finds Critical/High vulnerabilities
+- **Expected coverage**: OWASP A01-A07 (Access Control, Crypto/Cookies, Injection, Headers, Auth/Session failures)
 
-For detailed setup and troubleshooting, see:
-- [`docs/ZAP_SETUP.md`](docs/ZAP_SETUP.md) — ZAP installation, Docker authentication, and troubleshooting
+For detailed feature specification, see:
 - [`specs/006-owasp-security-tests/quickstart.md`](specs/006-owasp-security-tests/quickstart.md) — Feature specification and requirements
 
 ## Artifacts
@@ -230,13 +235,12 @@ npm run typecheck
   - API contract tests (headless, no browser)
   - Publishes Allure report as artifact
 
-- **`security.yml`** — Runs on every PR/push, weekly schedule, and manual dispatch
+- **`security.yml`** — Runs on every PR/push
   - Lint and TypeScript type-check (required)
-  - Starts OWASP ZAP Docker container on port 8080
-  - Runs security tests with ZAP passive scanning (Chromium only)
-  - Queries ZAP REST API for findings
-  - **Fails CI if any Critical or High severity alerts are present**
-  - Stops ZAP and cleans up resources
-  - Publishes security report as artifact
+  - Runs Nuclei Docker container to scan target URL (735+ templates)
+  - Generates JSONL results file at `reports/nuclei-results.json`
+  - Runs all 22 security tests (19 baseline + 3 Nuclei validation tests)
+  - **Fails CI if any Critical or High severity vulnerabilities are found**
+  - Publishes Allure and HTML reports as artifacts
 
 **Configuration:** Both pipelines use 4 workers, retry once on failure, and run from Linux runners with Docker support.
