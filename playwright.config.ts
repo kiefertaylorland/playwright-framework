@@ -50,13 +50,6 @@ export default defineConfig({
       testMatch: '**/tests/security/**/*.spec.ts',
       use: {
         ...devices['Desktop Chrome'],
-        // ZAP proxy configuration - set via environment variable or direct config
-        proxy: process.env.ZAP_PROXY
-          ? {
-              server: process.env.ZAP_PROXY,
-              bypass: 'localhost,.auth',
-            }
-          : undefined,
       },
     },
   ],

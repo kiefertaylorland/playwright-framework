@@ -1,0 +1,20 @@
+services:
+  nuclei:
+    image: projectdiscovery/nuclei:latest
+    container_name: nuclei-scan
+    restart: 'no'
+    volumes:
+      - ./reports:/reports
+    command:
+      - '-u'
+      - 'https://www.saucedemo.com'
+      - '-t'
+      - 'http/misconfiguration'
+      - '-t'
+      - 'http/exposures'
+      - '-severity'
+      - 'medium,high,critical'
+      - '-jsonl'
+      - '-o'
+      - '/reports/nuclei-results.json'
+      - '-no-interactsh'

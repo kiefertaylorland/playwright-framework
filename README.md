@@ -164,7 +164,9 @@ npm run zap:down                  # Stop ZAP
 - **With ZAP**: All tests run; CI fails if ZAP finds Critical/High alerts
 - **Expected failures**: `headers.spec.ts` may fail on SauceDemo demo site (intentional documentation of gaps)
 
-For detailed setup and troubleshooting, see [`specs/006-owasp-security-tests/quickstart.md`](specs/006-owasp-security-tests/quickstart.md).
+For detailed setup and troubleshooting, see:
+- [`docs/ZAP_SETUP.md`](docs/ZAP_SETUP.md) — ZAP installation, Docker authentication, and troubleshooting
+- [`specs/006-owasp-security-tests/quickstart.md`](specs/006-owasp-security-tests/quickstart.md) — Feature specification and requirements
 
 ## Artifacts
 
