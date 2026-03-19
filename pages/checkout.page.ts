@@ -49,6 +49,14 @@ export class CheckoutPage {
     this.page = page;
   }
 
+  /**
+   * Navigate directly to the checkout step 1 page.
+   * Assumes user is already authenticated.
+   */
+  public async goto(): Promise<void> {
+    await this.page.goto(ROUTES.CHECKOUT_STEP_ONE);
+  }
+
   // ----- Cart entry -----
 
   /**

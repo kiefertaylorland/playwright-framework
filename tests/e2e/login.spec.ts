@@ -18,10 +18,8 @@ test.describe('Authentication - Login', () => {
   });
 
   test('Error — locked-out account shows correct message', async ({ loginPage, page }) => {
-    const credentials = getSauceCredentials();
-
     await loginPage.goto();
-    await loginPage.login(LOCKED_OUT_USER, credentials.password);
+    await loginPage.login(LOCKED_OUT_USER.username, LOCKED_OUT_USER.password);
 
     await expect(page).toHaveURL(ROUTES.LOGIN);
     expect(await loginPage.isErrorVisible()).toBe(true);

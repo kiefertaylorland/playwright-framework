@@ -20,7 +20,10 @@ export function getSauceCredentials(): Credentials {
   };
 }
 
-export const LOCKED_OUT_USER = 'locked_out_user';
+export const LOCKED_OUT_USER: Credentials = {
+  username: 'locked_out_user',
+  password: 'secret_sauce',
+};
 
 export const INVALID_CREDENTIALS: Credentials = {
   username: 'invalid_user',

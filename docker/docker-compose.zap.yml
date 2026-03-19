@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  zap:
+    image: 'owasp/zap2docker-stable:latest'
+    container_name: zap-proxy
+    ports:
+      - '8080:8080'
+      - '8090:8090'
+    environment:
+      - ZAP_PORT=8080
+    command:
+      - 'zap.sh'
+      - '-config'
+      - 'api.disablekey=true'
+      - '-config'
+      - 'api.incognito=true'
+      - '-config'
+      - 'scanner.loglevel=WARN'
+      - '-config'
+      - 'network.security.properties.ocsp.enabled=false'
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/json/core/view/version/']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+networks:
+  test-network:
+    driver: bridge
