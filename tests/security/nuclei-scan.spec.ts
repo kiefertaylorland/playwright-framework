@@ -6,7 +6,8 @@
  * Skip if NUCLEI_SKIP environment variable is set
  */
 
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { test, expect } from '@fixtures';
 import {
   readNucleiResults,
@@ -26,8 +27,6 @@ test.describe('Security Testing - Nuclei Vulnerability Scanning (US8)', () => {
   const RESULTS_FILE = path.resolve(process.cwd(), 'reports/nuclei-results.json');
 
   test('Nuclei results file exists and is non-empty', () => {
-    const fs = require('fs');
-
     // Verify file exists
     expect(fs.existsSync(RESULTS_FILE)).toBe(true);
 

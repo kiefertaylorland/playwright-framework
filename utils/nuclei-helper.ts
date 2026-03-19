@@ -3,6 +3,8 @@
  * Used for parsing Nuclei JSONL results and validating finding severity
  */
 
+import fs from 'node:fs';
+
 /**
  * Nuclei Finding Severity Levels
  * 0 = Info, 1 = Low, 2 = Medium, 3 = High, 4 = Critical
@@ -39,9 +41,6 @@ export interface NucleiRawFinding {
  * @returns Array of parsed findings
  */
 export function readNucleiResults(filePath: string): NucleiRawFinding[] {
-  const fs = require('fs');
-  const path = require('path');
-
   if (!fs.existsSync(filePath)) {
     throw new Error(`Nuclei results file not found: ${filePath}`);
   }
