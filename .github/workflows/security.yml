@@ -48,10 +48,7 @@ jobs:
 
       - name: Run Nuclei scan
         run: |
-          set -euo pipefail
-          # Create empty JSONL file as fallback (empty JSONL is valid)
-          : > reports/nuclei-results.json
-
+          mkdir -p reports
           docker run --rm \
             -v ${{ github.workspace }}/reports:/reports \
             projectdiscovery/nuclei:latest \
@@ -61,11 +58,10 @@ jobs:
             -severity medium,high,critical \
             -jsonl \
             -o /reports/nuclei-results.json \
-            -no-interactsh \
-            || true
-
-          echo "Nuclei scan completed"
-          ls -lh reports/nuclei-results.json || echo "File check failed"
+            -no-interactsh || true
+          # Create empty fallback only if Docker didn't produce the file
+          [ -f reports/nuclei-results.json ] || : > reports/nuclei-results.json
+          echo "Nuclei scan step complete ($(wc -l < reports/nuclei-results.json) lines)"
 
       - name: Verify Nuclei results file exists
         run: |
@@ -96,14 +92,6 @@ jobs:
           SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
           SAUCE_PASSWORD: ${{ secrets.SAUCE_PASSWORD }}
         run: npx playwright test --project=security
-
-      - name: Run security tests without Nuclei scanning
-        if: always()
-        env:
-          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
-          SAUCE_PASSWORD: ${{ secrets.SAUCE_PASSWORD }}
-          NUCLEI_SKIP: '1'
-        run: npx playwright test tests/security/access-control.spec.ts tests/security/crypto-failures.spec.ts tests/security/injection.spec.ts tests/security/auth-security.spec.ts tests/security/headers-security.spec.ts --project=security
 
       - name: Upload Allure Report
         if: always()

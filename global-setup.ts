@@ -10,13 +10,11 @@ import { getSauceCredentials } from './utils/auth';
 import { ROUTES } from './utils/routes';
 
 async function globalSetup(): Promise<void> {
-  const credentials = getSauceCredentials();
-
-  // Skip authenticated setup when credentials aren't available (e.g., PRs from forks)
-  if (!credentials?.username || !credentials?.password) {
-    console.warn(
-      'Skipping global setup: missing SAUCE_USERNAME/SAUCE_PASSWORD. Tests requiring auth will be skipped.'
-    );
+  let credentials;
+  try {
+    credentials = getSauceCredentials();
+  } catch {
+    console.warn('Skipping global setup: missing SAUCE_USERNAME/SAUCE_PASSWORD');
     return;
   }
 
