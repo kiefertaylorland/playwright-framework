@@ -33,6 +33,15 @@
 
 [Gates determined based on constitution file]
 
+For security features, document the selected security mode:
+
+- Discovery Mode, Enforcement Mode, or Production Gate Mode
+- Gating behavior for PR, main, scheduled, manual, and release workflows
+- Target authorization status, especially for active scans
+- Report contents, redaction requirements, and artifact publishing
+- Graduation path from Discovery Mode to Enforcement Mode, if Discovery Mode is used
+- Any confirmed policy violations and their remediation or exception status
+
 ## Project Structure
 
 ### Documentation (this feature)

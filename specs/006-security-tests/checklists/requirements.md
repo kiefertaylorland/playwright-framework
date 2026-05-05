@@ -33,4 +33,4 @@
 
 - Validation pass completed on 2026-05-05.
 - The specification intentionally captures the agreed first-pass reporting-only scope.
-- Planning must resolve the documented constitution alignment gap: the current constitution mandates ZAP scans and CI failure on Critical/High security findings, while this feature scope is lightweight and non-gating.
+- Planning must document Discovery Mode explicitly and define the graduation path to Enforcement Mode.

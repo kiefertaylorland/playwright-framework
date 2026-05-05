@@ -1,34 +1,47 @@
 <!--
   SYNC IMPACT REPORT
   ==================
-  Version change:     (template/unversioned) → 1.0.0 (initial ratification)
-  Bump type:          MAJOR — first ratification from blank template; establishes all governing principles.
+  Version change:     1.0.0 -> 2.0.0
+  Bump type:          MAJOR - redefines the non-negotiable security gate from
+                      immediate ZAP/high-critical failure to a staged security
+                      governance model with explicit modes and graduation rules.
 
   Modified principles:
-    N/A — initial ratification; no prior principles existed.
+    - Security & Quality Gates: replaced mandatory always-on ZAP gating with
+      Discovery, Enforcement, and Production Gate modes.
+    - Development Workflow: CI security behavior now depends on the documented
+      security mode and confirmed finding status.
 
   Added sections:
-    - Core Principles (8 principles, expanded from 5-slot template)
-    - Security & Quality Gates
-    - Development Workflow
-    - Governance
+    - Security gate maturity modes
+    - Security report content requirements
+    - Safe security testing constraints
+    - Graduation criteria from Discovery Mode to Enforcement Mode
 
   Removed sections:
-    - All bracketed placeholder tokens (fully replaced)
+    - Mandatory active ZAP scan requirement for every security test suite
+    - Mandatory CI failure for every unfiltered ZAP Critical/High finding
 
   Templates reviewed for consistency:
     ✅ .specify/templates/plan-template.md
-         "Constitution Check" gate at line 30 is already constitution-agnostic.
-         No changes required.
+         Constitution Check now requires security features to document mode,
+         target authorization, reporting, gating behavior, and graduation path.
     ✅ .specify/templates/spec-template.md
-         Requirements section format is compatible with all 8 principles.
-         No changes required.
+         Requirements section remains compatible; no structural change needed.
     ✅ .specify/templates/tasks-template.md
-         "Security hardening" task in Polish phase aligns with Principle VIII.
-         No changes required.
+         Polish phase now calls out security gate/mode follow-through.
+    ✅ AGENTS.md
+         Security testing and CI guidance updated to staged gates.
+    ✅ specs/006-security-tests/spec.md
+         Discovery Mode scope now aligns with constitution instead of flagging
+         an unresolved conflict.
+    ✅ specs/006-security-tests/checklists/requirements.md
+         Checklist note updated for constitution alignment.
+    N/A .specify/templates/commands/
+         Directory is not present in this repository.
 
   Deferred TODOs:
-    None — all fields resolved from user input and CLAUDE.md context.
+    None.
 -->
 
 # Playwright Framework Constitution
@@ -127,18 +140,66 @@ UI-driven flows.
 
 ## Security & Quality Gates
 
-The framework MUST enforce the following gates as non-negotiable quality checks:
+Security gates are mandatory, but their enforcement level MUST be staged and
+explicit. Every security feature MUST document its current security mode in the
+feature spec or implementation plan.
 
-- **OWASP ZAP integration**: Security tests under `tests/security/` MUST run ZAP
-  passive and active scans alongside Playwright navigation flows.
-- **CI failure on critical findings**: GitHub Actions pipeline MUST fail on any
-  ZAP finding rated Critical or High severity.
-- **Input sanitization coverage**: Security test suite MUST include tests for
-  XSS, SQL injection, and CSRF where the target application exposes attack surfaces.
-- **Authentication flaw coverage**: Tests MUST validate session fixation, credential
-  brute-force resistance, and JWT validation (where applicable).
-- **No credentials in reports**: Allure report artifacts MUST NOT contain plaintext
-  credentials, tokens, or personally identifiable information.
+### Security Gate Maturity Modes
+
+- **Discovery Mode**: Non-destructive, non-gating, report-only validation used
+  to establish coverage and calibrate findings for a new target, new risk area,
+  or newly unstable check. Discovery Mode MUST produce a report, publish all
+  findings, document skipped coverage, and include a graduation path to
+  Enforcement Mode.
+- **Enforcement Mode**: Calibrated validation that gates CI on confirmed policy
+  violations. Enforcement Mode MUST fail CI on confirmed Critical or High
+  findings. Suspected, untriaged, or known false-positive findings MAY remain
+  non-gating only when their status and rationale are documented.
+- **Production Gate Mode**: Release-readiness validation for protected branches
+  or release workflows. Production Gate Mode MUST require all mandated security
+  checks for the target and MUST have no unresolved confirmed Critical or High
+  findings before release promotion.
+
+Discovery Mode is allowed only for first implementation of a target, first
+implementation of a risk area, or calibration of unstable checks. It MUST NOT
+be used as a permanent bypass for Enforcement Mode.
+
+### Security Coverage Requirements
+
+- **Scanner coverage**: Enforcement Mode web security coverage MUST include
+  OWASP ZAP or an equivalent approved scanner where the target exposes browser
+  or HTTP surfaces suitable for scanning.
+- **Active scan authorization**: Active scans MUST run only against local,
+  disposable, owned, or explicitly authorized targets. Passive scans SHOULD be
+  preferred for pull requests unless the target authorization and safety model
+  are documented.
+- **Input sanitization coverage**: Security test suites MUST include checks for
+  XSS, SQL injection, and CSRF where the target application exposes relevant
+  attack surfaces.
+- **Authentication flaw coverage**: Tests MUST validate session fixation,
+  credential brute-force resistance, access control, and JWT validation where
+  applicable.
+- **Safe testing**: Security checks MUST be non-destructive unless explicitly
+  authorized. Tests MUST NOT attempt data deletion, service disruption, account
+  lockout, credential stuffing, or uncontrolled traffic generation.
+- **Rate-limit checks**: Rate-limit and brute-force-resistance checks MUST use
+  conservative, documented request limits appropriate to the target.
+
+### Security Reporting Requirements
+
+Non-gating findings MUST still be reported and published; non-gating status MUST
+NOT suppress visibility. Security reports MUST include target, mode, target
+authorization status, gating status, severity, OWASP mapping where applicable,
+evidence summary, redaction status, skipped coverage, and recommended next
+action.
+
+Reports and artifacts MUST NOT contain plaintext credentials, tokens, session
+identifiers, or personally identifiable information.
+
+Before a suite graduates from Discovery Mode to Enforcement Mode, the plan MUST
+document at least two stable CI runs, triaged false positives, an approved
+severity policy, target authorization, adequate report evidence, and owners or
+follow-up tasks for skipped coverage.
 
 ## Development Workflow
 
@@ -151,6 +212,11 @@ The following workflow rules apply to all contributors:
   return zero results in any passing CI run.
 - **Lint + type-check gate**: `npm run lint` and `npx tsc --noEmit` MUST pass
   before any PR is merged. These run as the first CI job.
+- **Staged security gates**: Pull requests MAY run Discovery Mode checks as
+  non-gating report publishers. `main` SHOULD run Enforcement Mode once checks
+  are calibrated. Scheduled and manual workflows MAY run deeper scans, including
+  active scans when authorization is documented. Release workflows MUST use
+  Production Gate Mode once release workflows exist.
 - **Auth state via global setup**: Authenticated test files MUST use
   `test.use({ storageState: '.auth/user.json' })` sourced from `globalSetup`.
   Login flows MUST NOT be repeated inside individual test bodies.
@@ -176,6 +242,6 @@ rationale for the change, and (c) a migration plan for any existing tests affect
 `fixtures/` MUST be checked against the Constitution Check gate in `plan-template.md`
 before approval. Reviewers are responsible for flagging violations.
 
-**Runtime guidance**: See `CLAUDE.md` for command references and directory conventions.
+**Runtime guidance**: See `AGENTS.md` for command references and directory conventions.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-13 | **Last Amended**: 2026-03-13
+**Version**: 2.0.0 | **Ratified**: 2026-03-13 | **Last Amended**: 2026-05-05

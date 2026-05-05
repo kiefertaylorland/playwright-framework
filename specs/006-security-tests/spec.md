@@ -109,7 +109,7 @@ A QA engineer can include repository hygiene observations in the same security s
 - **FR-022**: System MUST make the security summary suitable for CI artifact publication.
 - **FR-023**: System MUST support a non-gating CI run on pull requests and manual execution.
 - **FR-024**: System MUST explicitly distinguish confirmed risk, review-needed signal, skipped coverage, and infrastructure uncertainty.
-- **FR-025**: System MUST identify the constitution alignment gap between this first-pass reporting-only scope and the repository's existing security gate requirements before implementation planning proceeds.
+- **FR-025**: System MUST document that this first-pass suite operates in Discovery Mode and MUST include a graduation path to Enforcement Mode before implementation planning proceeds.
 
 ### Key Entities
 
@@ -133,13 +133,13 @@ A QA engineer can include repository hygiene observations in the same security s
 - **SC-007**: The security validation capability completes successfully even when one optional target is unavailable, while clearly reporting the unavailable target.
 - **SC-008**: A technical reviewer can determine from the report which findings warrant remediation, which items need manual review, and which checks were skipped without opening raw logs.
 - **SC-009**: The security summary is usable as a pull request or workflow artifact without causing the pull request to fail solely because security observations were recorded.
-- **SC-010**: The feature identifies any policy conflict with existing repository security gate requirements before implementation begins.
+- **SC-010**: The feature documents Discovery Mode, non-gating behavior, and graduation criteria to Enforcement Mode before implementation begins.
 
 ## Assumptions
 
 - SauceDemo credentials are public training credentials and may be used as defaults when explicit environment configuration is absent.
 - Practice Software Testing public base configuration may be used for public checks when available, but credentials are optional and must not be hard-coded.
-- The first implementation phase is discovery-oriented and non-gating; enforcement gates may be introduced after the findings model is calibrated.
+- The first implementation phase uses constitution-approved Discovery Mode: discovery-oriented, non-gating, report-producing, and paired with a graduation path to Enforcement Mode.
 - Security payloads are harmless strings used to observe validation, reflection, and error behavior; they are not exploit attempts.
 - Repository hygiene checks scan only repository-owned files and exclude generated artifacts, dependency directories, and Git metadata.
-- The constitution currently mandates stronger ZAP and CI-gating behavior than this first-pass feature scope; that conflict must be resolved in planning or by a separate explicit constitution update.
+- The constitution requires staged security gates; this feature intentionally begins in Discovery Mode and must define its Enforcement Mode graduation path during planning.
