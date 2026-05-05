@@ -212,6 +212,14 @@ export class CheckoutPage {
     ).trim();
   }
 
+  public getCurrentUrl(): string {
+    return this.page.url();
+  }
+
+  public async getRenderedHtml(): Promise<string> {
+    return this.page.content();
+  }
+
   // ----- Private helpers -----
 
   /**

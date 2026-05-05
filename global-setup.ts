@@ -8,9 +8,10 @@ import { chromium } from '@playwright/test';
 import { LoginPage } from './pages/login.page';
 import { getSauceCredentials } from './utils/auth';
 import { ROUTES } from './utils/routes';
+import { getSauceDemoSecurityCredentials } from './utils/security-targets';
 
 async function globalSetup(): Promise<void> {
-  const credentials = getSauceCredentials();
+  const credentials = getGlobalSetupCredentials();
   const authDirectory = path.resolve(process.cwd(), '.auth');
   const storageStatePath = path.join(authDirectory, 'standard-user.json');
 
@@ -35,3 +36,11 @@ async function globalSetup(): Promise<void> {
 }
 
 export default globalSetup;
+
+function getGlobalSetupCredentials(): { username: string; password: string } {
+  try {
+    return getSauceCredentials();
+  } catch {
+    return getSauceDemoSecurityCredentials();
+  }
+}

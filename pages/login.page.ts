@@ -58,6 +58,14 @@ export class LoginPage {
     return usernameVisible && passwordVisible;
   }
 
+  public getCurrentUrl(): string {
+    return this.page.url();
+  }
+
+  public async getRenderedHtml(): Promise<string> {
+    return this.page.content();
+  }
+
   public isOnLoginPage(): Promise<boolean> {
     return Promise.resolve(new URL(this.page.url()).pathname === '/');
   }

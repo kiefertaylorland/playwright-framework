@@ -31,18 +31,26 @@ export default defineConfig({
       testMatch: '**/tests/api/**/*.spec.ts',
     },
     {
+      name: 'security',
+      testMatch: '**/tests/security/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: undefined,
+      },
+    },
+    {
       name: 'chromium',
-      testIgnore: '**/tests/api/**',
+      testIgnore: ['**/tests/api/**', '**/tests/security/**'],
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'firefox',
-      testIgnore: '**/tests/api/**',
+      testIgnore: ['**/tests/api/**', '**/tests/security/**'],
       use: { ...devices['Desktop Firefox'] },
     },
     {
       name: 'webkit',
-      testIgnore: '**/tests/api/**',
+      testIgnore: ['**/tests/api/**', '**/tests/security/**'],
       use: { ...devices['Desktop Safari'] },
     },
   ],
