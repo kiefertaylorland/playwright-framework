@@ -9,3 +9,8 @@ allure-results/
 compass_artifact_*.md
 .claude/
 .engineering/
+.specify/
+specs/
+.agents/
+.github/agents/
+.github/prompts/
