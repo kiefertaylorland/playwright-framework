@@ -1,0 +1,47 @@
+name: Security Discovery
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  security-discovery:
+    name: Security Discovery
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run Security Discovery
+        run: npm run security:discovery
+        env:
+          PST_API_URL: ${{ secrets.PST_API_URL }}
+          PST_API_USERNAME: ${{ secrets.PST_API_USERNAME }}
+          PST_API_PASSWORD: ${{ secrets.PST_API_PASSWORD }}
+
+      - name: Upload security summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-summary
+          path: reports/security/security-summary.md
+          if-no-files-found: warn

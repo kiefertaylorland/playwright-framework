@@ -3,6 +3,7 @@
     "target": "ES2022",
     "module": "commonjs",
     "moduleResolution": "node",
+    "allowImportingTsExtensions": true,
     "strict": true,
     "noImplicitAny": true,
     "esModuleInterop": true,
@@ -30,6 +31,7 @@
     "global-setup.ts",
     "fixtures/**/*.ts",
     "pages/**/*.ts",
+    "scripts/**/*.ts",
     "tests/**/*.ts",
     "utils/**/*.ts"
   ],
